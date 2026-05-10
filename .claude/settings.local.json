@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(node -e ' *)",
+      "Bash(python3 -)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\); print\\('\\\\nbuild config:'\\); print\\(json.dumps\\(d.get\\('build',{}\\), indent=2\\)\\)\")",
+      "Bash(npx electron-builder *)",
+      "Bash(grep -E \"\\\\.\\(exe|dmg\\)$\")"
+    ]
+  }
+}
