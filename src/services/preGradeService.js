@@ -13,26 +13,51 @@ import { normalizeAnswer, normalizeCI } from './normalizeService.js';
 // D열 파싱
 // ─────────────────────────────────────────────
 
+/**
+ * 최상위 [...] 그룹만 추출하는 깊이 추적 파서 (P1)
+ * [[p],[d]] → ["[p],[d]"]  (중첩 괄호 보존)
+ * [ans1][ans2] → ["ans1", "ans2"]
+ */
 export const parseAnswerKey = (dCol) => {
   if (!dCol || dCol === 'None') return [];
-  const matches = [...String(dCol).matchAll(/\[([^\[\]]*)\]/g)];
-  return matches.map((m) => m[1].trim()).filter(Boolean);
+  const str = String(dCol);
+  const results = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '[') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (str[i] === ']') {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        const inner = str.slice(start + 1, i).trim();
+        if (inner) results.push(inner);
+        start = -1;
+      }
+    }
+  }
+  return results;
 };
 
 // ─────────────────────────────────────────────
 // 문제 유형 자동 감지
 // ─────────────────────────────────────────────
 
-export const detectQuestionType = (allowedForms) => {
+/**
+ * Type C 판정 기준을 options.listMinItems(기본 5)개 이상으로 상향 (P2-C1)
+ * → 3단어 구/제목(102, 104)이 오검출되던 문제 해결
+ */
+export const detectQuestionType = (allowedForms, options = {}) => {
   if (!allowedForms.length) return 'UNKNOWN';
 
   // Type D: 모든 form이 숫자 + 구분자만으로 구성
   const isAllDigits = allowedForms.every((f) => /^[\d\s,().]+$/.test(f));
   if (isAllDigits) return 'D';
 
-  // Type C: 어느 form이라도 쉼표로 구분된 항목이 3개 이상
+  // Type C: 어느 form이라도 쉼표 구분 항목이 listMinItems개 이상
+  const listMinItems = options.listMinItems ?? 5;
   const hasListForm = allowedForms.some(
-    (f) => f.split(',').map((t) => t.trim()).filter(Boolean).length >= 3
+    (f) => f.split(',').map((t) => t.trim()).filter(Boolean).length >= listMinItems
   );
   if (hasListForm) return 'C';
 
@@ -76,10 +101,11 @@ export const levenshtein = (a, b) => {
 /**
  * 단어 길이 기반 허용 편집 거리 계산
  * mode: 'strict' | 'lenient' | 'none'
+ * P3: 기준 하한을 ≤4 → ≤3으로 조정 (4자 단어도 1오타 허용)
  */
 const spellThreshold = (wordLen, mode) => {
   if (mode === 'none') return -1;
-  const base = wordLen <= 4 ? 0 : wordLen <= 7 ? 1 : 2;
+  const base = wordLen <= 3 ? 0 : wordLen <= 7 ? 1 : 2;
   return mode === 'lenient' ? base + 1 : base;
 };
 
@@ -95,23 +121,20 @@ const spellThreshold = (wordLen, mode) => {
 const describeEdit1 = (from, to) => {
   const fl = from.length, tl = to.length
   if (fl === tl) {
-    // 치환 또는 전치
     const diffs = []
     for (let i = 0; i < fl; i++) if (from[i] !== to[i]) diffs.push(i)
     if (diffs.length === 2) {
       const [i, j] = diffs
       if (from[i] === to[j] && from[j] === to[i])
-        return `${from[i]}${from[j]}→${to[i]}${to[j]}`  // 전치
+        return `${from[i]}${from[j]}→${to[i]}${to[j]}`
     }
-    if (diffs.length === 1) return `${from[diffs[0]]}→${to[diffs[0]]}`  // 치환
+    if (diffs.length === 1) return `${from[diffs[0]]}→${to[diffs[0]]}`
   } else if (fl === tl + 1) {
-    // 학생이 글자를 추가한 경우
     for (let i = 0; i <= tl; i++) {
       if (from.slice(0, i) === to.slice(0, i) && from.slice(i + 1) === to.slice(i))
         return `'${from[i]}' 추가`
     }
   } else if (fl === tl - 1) {
-    // 학생이 글자를 누락한 경우
     for (let i = 0; i <= fl; i++) {
       if (from.slice(0, i) === to.slice(0, i) && from.slice(i) === to.slice(i + 1))
         return `'${to[i]}' 누락`
@@ -129,10 +152,6 @@ const SEP_NAMES = {
   '(': '소괄호', ')': '소괄호', '[': '대괄호', ']': '대괄호',
 }
 
-/**
- * 학생 답안에서 실제로 무시된 구분자를 탐지하여 한국어로 반환
- * note: 'canonical' (쉼표·괄호 제거) | 'separator-stripped' (전체 제거)
- */
 const detectIgnoredSeps = (normStudent, note) => {
   const pattern = note === 'canonical' ? /[()[\],]/g : /[()\[\] ,\-]/g
   const chars = [...normStudent.matchAll(pattern)].map(m => m[0])
@@ -142,7 +161,7 @@ const detectIgnoredSeps = (normStudent, note) => {
 }
 
 // ─────────────────────────────────────────────
-// Type A 채점: 정규화 + 완전 일치 (3단계)
+// Type A 채점: 정규화 + 완전 일치 (4단계)
 // ─────────────────────────────────────────────
 
 const canonicalize = (s) =>
@@ -150,8 +169,12 @@ const canonicalize = (s) =>
 
 const stripAll = (s) => s.replace(/[()\[\]\s,\-]/g, '');
 
+/**
+ * P2-C3: levenshteinMode → levenshteinModeA (Type A 전용 키)
+ * P2-C3: 편집거리 상한을 1로 고정 (교수 기준: 거리≥2 → 0점)
+ */
 export const gradeTypeA = (studentAns, allowedForms, options = {}) => {
-  const { levenshteinMode = 'none', fuzzyScoreRatio = 0 } = options;
+  const { levenshteinModeA = 'none', fuzzyScoreRatio = 0 } = options;
   const normStudent = normalizeCI(studentAns);
 
   // 1단계: 완전 일치
@@ -176,13 +199,13 @@ export const gradeTypeA = (studentAns, allowedForms, options = {}) => {
     }
   }
 
-  // 4단계: Levenshtein 유사 매칭 (옵션 활성화 시)
-  if (levenshteinMode !== 'none') {
+  // 4단계: Levenshtein 유사 매칭 (편집거리 1 상한 고정)
+  if (levenshteinModeA !== 'none') {
     let bestDist = Infinity, bestForm = null, bestNormForm = null;
     for (const form of allowedForms) {
       const normForm = normalizeCI(form);
       const refLen = Math.max(normStudent.length, normForm.length);
-      const threshold = spellThreshold(refLen, levenshteinMode);
+      const threshold = Math.min(spellThreshold(refLen, levenshteinModeA), 1);
       if (threshold < 0) continue;
       const dist = levenshtein(normStudent, normForm);
       if (dist <= threshold && dist < bestDist) {
@@ -205,36 +228,37 @@ export const gradeTypeA = (studentAns, allowedForms, options = {}) => {
 // ─────────────────────────────────────────────
 
 /**
- * 허용 form들을 위치별 허용 토큰 목록으로 변환
- * 쉼표 구분 항목이 최대인 form들을 모두 수집하고,
- * 같은 위치에 여러 form의 대안 표현을 모두 허용 (예: was | Twas | 'Twas)
- * 반환: [ [alt1, alt2, ...], [alt1, ...], ... ] — 위치 수 = maxCount
+ * 허용 form들을 위치별 허용 토큰 목록으로 변환 (P5)
+ * - 가장 긴 form들에서 위치별 대안을 수집
+ * - 필수 항목 수(totalItems)는 가장 짧은 form의 길이로 설정
+ *   → 선택적 추가 항목(예: Q108의 'Twas)이 있어도 기준 점수에 영향 없음
+ * 반환: { positions: [[alt1, alt2, ...], ...], totalItems: number }
  */
 const extractCorrectPositions = (allowedForms) => {
-  let maxCount = 0;
-  const allSets = [];
-  for (const form of allowedForms) {
-    const tokens = form.split(',').map((t) => t.trim()).filter(Boolean);
-    if (tokens.length > maxCount) maxCount = tokens.length;
-    allSets.push(tokens);
-  }
+  const allSets = allowedForms.map((form) =>
+    form.split(',').map((t) => t.trim()).filter(Boolean)
+  );
+  const lengths = allSets.map((s) => s.length).filter((n) => n > 0);
+  if (!lengths.length) return { positions: [], totalItems: 0 };
+
+  const minCount = Math.min(...lengths);
+  const maxCount = Math.max(...lengths);
   const maxSets = allSets.filter((s) => s.length === maxCount);
-  return Array.from({ length: maxCount }, (_, i) =>
+  const positions = Array.from({ length: maxCount }, (_, i) =>
     [...new Set(maxSets.map((s) => s[i]).filter(Boolean))]
   );
+  return { positions, totalItems: minCount };
 };
 
 const applyRounding = (val, mode) => {
-  if (mode === 'ceil')  return Math.ceil(val);          // 올림 → 정수 (0.1 → 1)
-  if (mode === 'floor') return Math.floor(val);         // 버림 → 정수 (0.9 → 0, 1.5 → 1)
-  if (mode === 'half')  return Math.round(val * 2) / 2; // 0.5점 단위 반올림
-  return Math.round(val);                               // 반올림 → 정수 (0.5 → 1)
+  if (mode === 'ceil')  return Math.ceil(val);
+  if (mode === 'floor') return Math.floor(val);
+  if (mode === 'half')  return Math.round(val * 2) / 2;
+  return Math.round(val);
 }
 
 /**
  * 유사 매칭 점수 계산 (Type A/B, E 공통)
- * - 저배점 임계값 모드: maxScore ≤ fuzzyThresholdMax → fuzzyThresholdScore 고정
- * - 그 외: maxScore × fuzzyScoreRatio → 반올림 처리
  */
 const calcFuzzyScore = (maxScore, options) => {
   const {
@@ -250,15 +274,20 @@ const calcFuzzyScore = (maxScore, options) => {
   return applyRounding(maxScore * fuzzyScoreRatio, roundingMode)
 }
 
-const calcPartialScore = (correctCount, totalItems, maxScore, options) => {
+/**
+ * P6: wrongTokenCount 파라미터 추가, failCutoff 정책 추가
+ * failCutoff: 오답+누락 ≥ N이면 0점, 그 이하이면 비례 점수
+ */
+const calcPartialScore = (correctCount, totalItems, maxScore, options, wrongTokenCount = 0) => {
   const {
     partialPolicy = 'proportional',
     roundingMode = 'round',
     pointsPerItem = 1,
     deductionPerWrong = 1,
     thresholdMin = 1,
+    failCutoffN = 1,
   } = options
-  const wrongCount = totalItems - correctCount
+  const missingCount = totalItems - correctCount
 
   let raw
   switch (partialPolicy) {
@@ -266,12 +295,17 @@ const calcPartialScore = (correctCount, totalItems, maxScore, options) => {
       raw = Math.min(correctCount * pointsPerItem, maxScore)
       break
     case 'deduction':
-      raw = Math.max(maxScore - wrongCount * deductionPerWrong, 0)
+      raw = Math.max(maxScore - missingCount * deductionPerWrong, 0)
       break
     case 'threshold':
       raw = correctCount >= thresholdMin
         ? (correctCount / totalItems) * maxScore
         : 0
+      break
+    case 'failCutoff':
+      raw = (wrongTokenCount + missingCount >= failCutoffN)
+        ? 0
+        : (correctCount / totalItems) * maxScore
       break
     default: // proportional
       raw = (correctCount / totalItems) * maxScore
@@ -280,20 +314,19 @@ const calcPartialScore = (correctCount, totalItems, maxScore, options) => {
 }
 
 /**
- * options: { wrongPolicy, levenshteinMode, partialPolicy, roundingMode, pointsPerItem, deductionPerWrong, thresholdMin }
+ * P2-C3: levenshteinMode → levenshteinModeC (Type C 전용 키)
+ * P4: 중복 토큰 감지 — 이미 매칭된 토큰의 재출현을 'duplicate'로 처리 (오답 카운트 제외)
+ * P5: extractCorrectPositions의 totalItems(minCount) 사용
  */
 export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => {
-  const { wrongPolicy = 'zero', levenshteinMode = 'strict' } = options;
+  const { wrongPolicy = 'zero', levenshteinModeC = 'strict' } = options;
 
-  // 위치별 허용 토큰 목록 (같은 위치에 여러 대안 표현 허용)
-  const correctPositions = extractCorrectPositions(allowedForms);
+  const { positions: correctPositions, totalItems } = extractCorrectPositions(allowedForms);
   if (!correctPositions.length) return null;
-  const totalItems = correctPositions.length;
 
   const normalize = (s) => normalizeAnswer(s).toLowerCase().trim();
   const normPositions = correctPositions.map((alts) => alts.map(normalize));
 
-  // 학생 답안 파싱 (다양한 구분자 허용)
   const studentTokens = studentAns
     .split(/[,，、\s]+/)
     .map(normalize)
@@ -305,28 +338,36 @@ export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => 
 
   const matchResults = [];
   const usedPosIdx = new Set();
+  const matchedNormTokens = new Set(); // P4: 중복 감지용
 
   for (const token of studentTokens) {
-    // 1차: 완전 일치 — 어느 위치의 어느 대안과든 일치하면 정답
+    // P4: 이미 매칭된 동일 토큰 → 중복으로 표시하고 건너뜀
+    if (matchedNormTokens.has(token)) {
+      matchResults.push({ token, type: 'duplicate' });
+      continue;
+    }
+
+    // 1차: 완전 일치
     let matched = false;
     for (let i = 0; i < normPositions.length; i++) {
       if (usedPosIdx.has(i)) continue;
       if (normPositions[i].includes(token)) {
         matchResults.push({ token, type: 'exact', correctItem: correctPositions[i][0] });
         usedPosIdx.add(i);
+        matchedNormTokens.add(token);
         matched = true;
         break;
       }
     }
     if (matched) continue;
 
-    // 2차: Levenshtein 유사 매칭 — 위치별 모든 대안과 비교
+    // 2차: Levenshtein 유사 매칭
     let bestDist = Infinity, bestPosIdx = -1, bestNormAlt = null;
     for (let i = 0; i < normPositions.length; i++) {
       if (usedPosIdx.has(i)) continue;
       for (const normAlt of normPositions[i]) {
         const wordLen = Math.max(token.length, normAlt.length);
-        const threshold = spellThreshold(wordLen, levenshteinMode);
+        const threshold = spellThreshold(wordLen, levenshteinModeC);
         if (threshold < 0) continue;
         const dist = levenshtein(token, normAlt);
         if (dist <= threshold && dist < bestDist) {
@@ -341,6 +382,7 @@ export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => 
       const diffDesc = bestDist === 1 ? describeEdit1(token, bestNormAlt) : null;
       matchResults.push({ token, type: 'fuzzy', dist: bestDist, correctItem: correctPositions[bestPosIdx][0], diffDesc });
       usedPosIdx.add(bestPosIdx);
+      matchedNormTokens.add(token);
     } else {
       matchResults.push({ token, type: 'wrong' });
     }
@@ -349,7 +391,9 @@ export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => 
   const exactCount = matchResults.filter((r) => r.type === 'exact').length;
   const fuzzyCount = matchResults.filter((r) => r.type === 'fuzzy').length;
   const wrongTokens = matchResults.filter((r) => r.type === 'wrong').map((r) => r.token);
-  const correctCount = exactCount + fuzzyCount;
+  const duplicateTokens = matchResults.filter((r) => r.type === 'duplicate').map((r) => r.token);
+  // P5: totalItems(minCount) 초과 불가
+  const correctCount = Math.min(exactCount + fuzzyCount, totalItems);
 
   if (wrongTokens.length > 0 && wrongPolicy === 'zero') {
     return {
@@ -360,10 +404,11 @@ export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => 
     };
   }
 
-  const missingCount = totalItems - usedPosIdx.size;
-  let score = calcPartialScore(correctCount, totalItems, maxScore, options);
+  // P5: 선택적 위치(totalItems 초과 인덱스)는 누락으로 계산하지 않음
+  const missingCount = totalItems - Math.min(usedPosIdx.size, totalItems);
+  let score = calcPartialScore(correctCount, totalItems, maxScore, options, wrongTokens.length);
 
-  // 오탈자 상한 적용 (Type C 전용)
+  // 오탈자 점수 상한 적용 (Type C 전용)
   if (fuzzyCount > 0 && options.typeCFuzzyCapEnabled) {
     const cap = calcFuzzyScore(maxScore, {
       fuzzyThresholdEnabled: true,
@@ -386,6 +431,7 @@ export const gradeTypeC = (studentAns, allowedForms, maxScore, options = {}) => 
   }
   if (missingCount > 0) reason += `, ${missingCount}개 누락`;
   if (wrongTokens.length > 0) reason += `, 오답(${wrongTokens.join(', ')}) 제외 후 계산`;
+  if (duplicateTokens.length > 0) reason += `, 중복 무시(${duplicateTokens.join(', ')})`;
 
   const gradingStatus =
     fuzzyCount > 0 ? 'fuzzy'
@@ -498,6 +544,9 @@ export const gradeTypeD = (studentAns, allowedForms, options = {}) => {
 /**
  * preGrade(studentAns, dCol, maxScore, options)
  *
+ * P2-C2: options.forcedType 가 있으면 자동 감지를 건너뜀
+ * P2-C1: detectQuestionType에 options 전달 (listMinItems 적용)
+ *
  * 반환값:
  *   { score, reason, gradingStatus, questionType }
  *   gradingStatus: 'correct' | 'partial' | 'fuzzy' | 'wrong' | 'review' | 'blank'
@@ -513,7 +562,7 @@ export const preGrade = (studentAns, dCol, maxScore = 1, options = {}) => {
     };
   }
 
-  const qType = detectQuestionType(allowedForms);
+  const qType = options.forcedType ?? detectQuestionType(allowedForms, options);
 
   // ── Type D ──────────────────────────────────
   if (qType === 'D') {

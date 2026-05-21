@@ -6,6 +6,7 @@ import ResultTable from './components/ResultTable'
 import AppPreferencesModal from './components/AppPreferencesModal'
 import GradingOptionsModal from './components/GradingOptionsModal'
 import TypeInfoModal from './components/TypeInfoModal'
+import TypeOverridePanel from './components/TypeOverridePanel'
 import { processXLSX, exportToXLSX } from './services/xlsxService'
 import { processCSV, exportToCSV } from './services/csvService'
 import { preGrade } from './services/preGradeService'
@@ -16,14 +17,17 @@ const DEFAULT_OPTIONS = {
   fuzzyThresholdEnabled: false,
   fuzzyThresholdMax: 4,
   fuzzyThresholdScore: 1,
+  levenshteinModeA: 'none',
   // Type C
   wrongPolicy: 'zero',
-  levenshteinMode: 'strict',
+  levenshteinModeC: 'strict',
   partialPolicy: 'proportional',
   roundingMode: 'round',
   pointsPerItem: 1,
   deductionPerWrong: 1,
   thresholdMin: 1,
+  failCutoffN: 2,
+  listMinItems: 5,
   typeCFuzzyCapEnabled: false,
   typeCFuzzyThresholdMax: 4,
   typeCFuzzyThresholdScore: 1,
@@ -46,7 +50,13 @@ const DEFAULT_PREFS = { theme: 'system' }
 
 const loadOptions = () => {
   try {
-    return { ...DEFAULT_OPTIONS, ...JSON.parse(localStorage.getItem('apar_options') || '{}') }
+    const saved = JSON.parse(localStorage.getItem('apar_options') || '{}')
+    // v1.1→v1.2 마이그레이션: levenshteinMode → levenshteinModeC
+    if (saved.levenshteinMode && !saved.levenshteinModeC) {
+      saved.levenshteinModeC = saved.levenshteinMode
+    }
+    delete saved.levenshteinMode
+    return { ...DEFAULT_OPTIONS, ...saved }
   } catch {
     return DEFAULT_OPTIONS
   }
@@ -60,16 +70,25 @@ const loadPrefs = () => {
   }
 }
 
-const runPreGrade = (data, options) =>
+const runPreGrade = (data, options, forcedTypes = {}) =>
   data.map((row) => {
+    const forcedType = forcedTypes[row.problemId] || undefined
     const result = preGrade(
       row.studentAnswer ?? row._apar_answer ?? '',
       row.answerKey ?? row._apar_dCol ?? '',
       row.maxScore ?? 1,
-      options,
+      { ...options, forcedType },
     )
     return { ...row, ...(result || { score: 0, reason: '정답키 없음', gradingStatus: 'review', questionType: 'UNKNOWN' }) }
   })
+
+const loadForcedTypes = () => {
+  try {
+    return JSON.parse(localStorage.getItem('apar_forced_types') || '{}')
+  } catch {
+    return {}
+  }
+}
 
 export default function App() {
   const [options, setOptions] = useState(loadOptions)
@@ -78,6 +97,7 @@ export default function App() {
   const [results, setResults] = useState([])
   const [fileInfo, setFileInfo] = useState(null)
   const [xlsxMeta, setXlsxMeta] = useState(null)
+  const [forcedTypes, setForcedTypes] = useState(loadForcedTypes)
 
   // Modal states
   const [showAppPrefs, setShowAppPrefs] = useState(false)
@@ -110,6 +130,11 @@ export default function App() {
     localStorage.setItem('apar_prefs', JSON.stringify(prefs))
   }, [prefs])
 
+  // ── Persist forced types ─────────────────────
+  useEffect(() => {
+    localStorage.setItem('apar_forced_types', JSON.stringify(forcedTypes))
+  }, [forcedTypes])
+
   // ── Electron IPC — open preferences from menu ─
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -137,7 +162,7 @@ export default function App() {
     const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
     if (isXlsx) {
       const { data, headers, rawRows } = await processXLSX(file)
-      const graded = runPreGrade(data, options)
+      const graded = runPreGrade(data, options, forcedTypes)
       setRawData(data)
       setResults(graded)
       setXlsxMeta({ headers, rawRows })
@@ -153,7 +178,7 @@ export default function App() {
         maxScore: 1,
         problemId: '',
       }))
-      const graded = runPreGrade(normalized, options)
+      const graded = runPreGrade(normalized, options, forcedTypes)
       setRawData(normalized)
       setResults(graded)
       setXlsxMeta(null)
@@ -163,7 +188,7 @@ export default function App() {
 
   const handleRegrade = () => {
     if (!rawData.length) return
-    setResults(runPreGrade(rawData, options))
+    setResults(runPreGrade(rawData, options, forcedTypes))
   }
 
   const handleDownload = () => {
@@ -280,6 +305,14 @@ export default function App() {
               파일 업로드 즉시 자동으로 채점이 실행됩니다
             </p>
           </section>
+
+          {hasResults && (
+            <TypeOverridePanel
+              results={results}
+              forcedTypes={forcedTypes}
+              setForcedTypes={setForcedTypes}
+            />
+          )}
         </div>
 
         {/* 오른쪽 — 요약 + 결과 테이블 */}
@@ -311,7 +344,7 @@ export default function App() {
 
       <footer className="max-w-7xl w-full mx-auto mt-auto pt-8 pb-6 text-center">
         <p className="text-[var(--text-muted)] text-[10px] tracking-widest uppercase opacity-50">
-          Copyright © 2026, HARAM PARK. All rights reserved. &nbsp;·&nbsp; v1.1.0
+          Copyright © 2026, HARAM PARK. All rights reserved. &nbsp;·&nbsp; v1.2.0
         </p>
       </footer>
     </div>

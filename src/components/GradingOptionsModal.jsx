@@ -3,10 +3,11 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import Modal from './Modal'
 
 const PARTIAL_MODELS = [
-  { value: 'proportional', label: '비율 비례',   desc: '(정답수 ÷ 전체) × 배점' },
-  { value: 'fixed',        label: '항목당 고정', desc: '맞은 개수 × 항목당 점수 (상한: 배점)' },
-  { value: 'deduction',    label: '감점 방식',   desc: '배점 − 오답 수 × 감점액 (하한: 0)' },
-  { value: 'threshold',    label: '임계값',      desc: 'N개 이상 맞춰야 점수 시작' },
+  { value: 'proportional', label: '비율 비례',    desc: '(정답수 ÷ 전체) × 배점' },
+  { value: 'fixed',        label: '항목당 고정',  desc: '맞은 개수 × 항목당 점수 (상한: 배점)' },
+  { value: 'deduction',    label: '감점 방식',    desc: '배점 − 누락 수 × 감점액 (하한: 0)' },
+  { value: 'threshold',    label: '임계값',       desc: 'N개 이상 맞춰야 점수 시작' },
+  { value: 'failCutoff',   label: '실패 임계값',  desc: '오답+누락 ≥ N개이면 0점, 그 이하면 비례' },
 ]
 
 const ROUNDING_OPTIONS = [
@@ -22,7 +23,7 @@ const WRONG_OPTIONS = [
 ]
 
 const LEVENSHTEIN_OPTIONS = [
-  { value: 'strict',  label: '엄격 — ≤4자: 완전일치, 5–7자: 1오타, 8자+: 2오타' },
+  { value: 'strict',  label: '엄격 — ≤3자: 완전일치, 4–7자: 1오타, 8자+: 2오타' },
   { value: 'lenient', label: '관대 — 각 기준 +1 오타 추가 허용' },
   { value: 'none',    label: '허용 안 함 (스펠링 오류 = 오답)' },
 ]
@@ -240,6 +241,12 @@ function TypeCSection({ options, set }) {
               <NumberField label="최소 정답 개수" value={options.thresholdMin ?? 1} onChange={set('thresholdMin')} min={1} step={1} placeholder="예: 2" />
             </div>
           )}
+          {options.partialPolicy === 'failCutoff' && (
+            <div className="mt-3 space-y-1">
+              <NumberField label="허용 오류 상한 (N개 미만이면 점수 부여)" value={options.failCutoffN ?? 2} onChange={set('failCutoffN')} min={1} step={1} placeholder="예: 2" />
+              <p className="text-[10px] text-[var(--text-muted)]">오답+누락 ≥ N이면 0점 처리</p>
+            </div>
+          )}
         </div>
 
         <SelectField
@@ -258,9 +265,9 @@ function TypeCSection({ options, set }) {
 
         <SelectField
           label="스펠링 오류 허용 범위 (Levenshtein)"
-          value={options.levenshteinMode}
+          value={options.levenshteinModeC ?? 'strict'}
           options={LEVENSHTEIN_OPTIONS}
-          onChange={set('levenshteinMode')}
+          onChange={set('levenshteinModeC')}
         />
 
         {/* 오탈자 점수 상한 */}
@@ -341,19 +348,20 @@ function TypeESection({ options, set }) {
 
 const LEVENSHTEIN_OPTIONS_AB = [
   { value: 'none',    label: '허용 안 함 (완전 일치만 정답)' },
-  { value: 'strict',  label: '엄격 — ≤4자: 완전일치, 5–7자: 1오타, 8자+: 2오타' },
-  { value: 'lenient', label: '관대 — 각 기준 +1 오타 추가 허용' },
+  { value: 'strict',  label: '엄격 — ≤3자: 완전일치, 4–7자: 1오타, 8자+: 2오타 (편집거리 1 상한)' },
+  { value: 'lenient', label: '관대 — 각 기준 +1 오타 추가 허용 (편집거리 1 상한)' },
 ]
 
 const FUZZY_SCORE_OPTIONS = [
   { value: 0,    label: '0점 (검토 권장 표시만)' },
+  { value: 0.33, label: '33% 부분점수 (÷3 반올림)' },
   { value: 0.5,  label: '50% 부분점수' },
   { value: 0.75, label: '75% 부분점수' },
   { value: 1,    label: '만점 처리 (검토 권장 표시)' },
 ]
 
 function TypeABSection({ options, set }) {
-  const fuzzyEnabled = (options.levenshteinMode ?? 'none') !== 'none'
+  const fuzzyEnabled = (options.levenshteinModeA ?? 'none') !== 'none'
   return (
     <div className="border border-[var(--border)] rounded-xl overflow-hidden">
       <div className="px-4 pt-3 pb-2 bg-blue-50 dark:bg-blue-900/20">
@@ -361,10 +369,10 @@ function TypeABSection({ options, set }) {
       </div>
       <div className="px-4 py-4 space-y-4">
         <SelectField
-          label="스펠링 오류 허용 범위"
-          value={options.levenshteinMode ?? 'none'}
+          label="스펠링 오류 허용 범위 (편집거리 1 이하만 인정)"
+          value={options.levenshteinModeA ?? 'none'}
           options={LEVENSHTEIN_OPTIONS_AB}
-          onChange={set('levenshteinMode')}
+          onChange={set('levenshteinModeA')}
         />
         {fuzzyEnabled && (
           <>
@@ -372,7 +380,7 @@ function TypeABSection({ options, set }) {
               <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide block">
                 유사 매칭 시 부여 점수
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {FUZZY_SCORE_OPTIONS.map(({ value, label }) => (
                   <button
                     key={value}
