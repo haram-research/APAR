@@ -73,10 +73,15 @@
       ],
       "language": "1042"
     },
+    "releaseInfo": {
+      "releaseName": "APAR v1.2.0",
+      "releaseNotesFile": "release-notes-latest.txt"
+    },
     "publish": {
       "provider": "github",
       "owner": "haram-research",
-      "repo": "APAR"
+      "repo": "APAR",
+      "releaseType": "release"
     }
   }
 }

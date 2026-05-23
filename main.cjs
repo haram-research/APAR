@@ -137,12 +137,44 @@ app.whenReady().then(() => {
       autoUpdater.checkForUpdates().catch(() => {})
     }, 3000)
 
-    autoUpdater.on('update-available', () => {
+    // 업데이트 발견 — 버전 표시 + 백그라운드 다운로드 안내
+    autoUpdater.on('update-available', (info) => {
       dialog.showMessageBox(mainWindow, {
         type: 'info',
         title: 'APAR 업데이트',
-        message: '새 버전이 있습니다. 백그라운드에서 다운로드합니다.\n완료 후 앱 재시작 시 자동으로 설치됩니다.',
+        message: `새 버전 v${info.version}을 발견했습니다.`,
+        detail: '백그라운드에서 다운로드합니다.\n완료되면 재시작 안내가 표시됩니다.',
         buttons: ['확인'],
+      })
+    })
+
+    // 다운로드 완료 — 패치 노트 + 재시작 선택
+    autoUpdater.on('update-downloaded', (info) => {
+      const fallbackNotes = [
+        '■ v1.2.0 주요 변경사항',
+        '• 채점 알고리즘 버그 6건 수정 (Q102/104/108/109/110/111)',
+        '• 문항 유형 검토 패널 추가 (자동 감지 유형 강제 지정)',
+        '• Type A/C 스펠링 오류 허용 설정 분리',
+        '• 전체 내역: CHANGELOG.md 참조',
+      ].join('\n')
+
+      const notes = (typeof info.releaseNotes === 'string' && info.releaseNotes.trim())
+        ? info.releaseNotes.trim()
+        : fallbackNotes
+
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: `APAR v${info.version} 업데이트 준비 완료`,
+        message: `v${info.version} 다운로드가 완료되었습니다.`,
+        detail: notes,
+        buttons: ['지금 재시작', '나중에'],
+        defaultId: 0,
+        cancelId: 1,
+      }).then(({ response }) => {
+        if (response === 0) {
+          // isSilent=false, isForceRunAfter=true — 설치 후 자동 재실행 (Windows)
+          autoUpdater.quitAndInstall(false, true)
+        }
       })
     })
 
