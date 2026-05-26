@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Type C — 단어 리스트형</title>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+        }
+        
+        .slide-container {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        
+        /* Header */
+        .header-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1280px;
+            height: 70px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 60px;
+            z-index: 10;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .page-title i {
+            color: #4285F4;
+        }
+        
+        .breadcrumb {
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
+        .breadcrumb span {
+            color: #4285F4;
+            font-weight: 500;
+        }
+        
+        /* Main content */
+        .main-content {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 1280px;
+            height: 650px;
+            display: flex;
+            padding: 40px 60px 40px 60px;
+            gap: 40px;
+        }
+        
+        /* Left panel */
+        .left-panel {
+            width: 560px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .explanation-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid #4285F4;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .explanation-text {
+            font-size: 16px;
+            color: #5f6368;
+            line-height: 1.6;
+        }
+        
+        .key-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .key-point-icon {
+            width: 26px;
+            height: 26px;
+            background: #e8f0fe;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 13px;
+            color: #4285F4;
+        }
+        
+        .key-point-text {
+            font-size: 15px;
+            color: #5f6368;
+            line-height: 1.5;
+        }
+        
+        /* Right panel */
+        .right-panel {
+            width: 620px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Code block */
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        
+        .code-label {
+            font-size: 15px;
+            color: #d4d4d4;
+            font-weight: 500;
+        }
+        
+        .code-lang {
+            font-size: 12px;
+            color: #858585;
+            background: #2d2d2d;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .code-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14.5px;
+            color: #d4d4d4;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        
+        .code-comment { color: #6a9955; }
+        .code-string { color: #ce9178; }
+        .code-keyword { color: #569cd6; }
+        
+        /* Feature cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .feature-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .feature-content {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.5;
+        }
+        
+        /* Tips section */
+        .tips-section {
+            background: #e8f0fe;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .tips-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tips-text {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.7;
+        }
+        
+        /* Status indicator */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #e8f5e9;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #34A853;
+            margin-top: auto;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #34A853;
+            border-radius: 50%;
+        }
+        
+        /* Highlight */
+        .highlight {
+            background: linear-gradient(120deg, #e8f0fe 0%, #e8f0fe 100%);
+            background-repeat: no-repeat;
+            background-size: 100% 40%;
+            background-position: 0 88%;
+            padding: 0 4px;
+            font-weight: 500;
+        }
+
+        .bottom-explanation {
+            background: #f1f3f4;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #4285F4;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Header -->
+<div class="header-area">
+<div class="page-title">
+<i class="fas fa-list-ul"></i>
+<span>Type C — 단어 리스트형 (부분점수 O)</span>
+</div>
+<div class="breadcrumb">
+<span>APAR 가이드</span> / 문제 유형별 작성 방법
+        </div>
+</div>
+<!-- Main content -->
+<div class="main-content">
+<!-- Left panel -->
+<div class="left-panel">
+<div class="section-title">
+<i class="fas fa-info-circle" style="color: #4285F4; margin-right: 8px;"></i>
+                감지 조건 &amp; 채점 특징
+            </div>
+<div class="explanation-box">
+<div class="explanation-text">
+<span class="highlight">쉼표로 구분된 항목이 5개 이상</span>인 form이 하나라도 있으면 Type C로 자동 감지됩니다.
+                </div>
+<div class="key-point">
+<div class="key-point-icon"><i class="fas fa-check"></i></div>
+<div class="key-point-text">
+<strong>순서 무관 매칭</strong><br/>
+                        학생이 순서를 바꿔 써도 정답 처리됩니다
+                    </div>
+</div>
+<div class="key-point">
+<div class="key-point-icon"><i class="fas fa-calculator"></i></div>
+<div class="key-point-text">
+<strong>부분점수 지원</strong><br/>
+                        (맞은 개수 / 전체) × 배점, 반올림
+                    </div>
+</div>
+</div>
+<div class="tips-section">
+<div class="tips-title">
+<i class="fas fa-exclamation-triangle"></i>
+                    주의사항
+                </div>
+<div class="tips-text">
+                    • 항목이 4개 이하이면 Type A로 분류됩니다<br/>
+                    • 중복 항목 작성 시 두 번째 이후는 자동 무시됩니다<br/>
+                    • 오탈자(편집거리 1)는 기본적으로 허용됩니다
+                </div>
+</div>
+</div>
+<!-- Right panel -->
+<div class="right-panel">
+<div class="code-block">
+<div class="code-header">
+<div class="code-label">Type C 정답키 예시</div>
+<div class="code-lang">APAR</div>
+</div>
+<div class="code-content">
+<span class="code-comment">// 기본 리스트 형식</span>
+<span class="code-string">[항목1, 항목2, 항목3, 항목4, 항목5, ...]</span>
+<span class="code-comment">// 복수 허용 표현 (같은 위치에 대안)</span>
+<span class="code-string">[brillig, slithy, toves, gyre, gimble, wabe, jaws, time, son, foe]</span>
+<span class="code-string">[brillig, slithy, toves, gyre, gimble, wabe, claws, time, son, foe]</span>
+<span class="code-comment">// 선택적 추가 항목 (보너스)</span>
+<span class="code-string">['Twas, brillig, slithy, toves, gyre, gimble, wabe, jaws, time, son, foe]</span>
+</div>
+</div>
+<div class="feature-grid">
+<div class="feature-card">
+<div class="feature-title">
+<i class="fas fa-random" style="color: #4285F4;"></i>
+                        순서 무관
+                    </div>
+<div class="feature-content">
+                        학생이 순서를 바꿔 써도 정답으로 인정됩니다
+                    </div>
+</div>
+<div class="feature-card">
+<div class="feature-title">
+<i class="fas fa-percentage" style="color: #34A853;"></i>
+                        부분점수
+                    </div>
+<div class="feature-content">
+                        (맞은 개수 / 전체) × 배점 계산
+                    </div>
+</div>
+</div>
+<div class="bottom-explanation">
+<div class="explanation-text">
+<strong>복수 허용 표현:</strong> 같은 위치에 여러 대안을 허용하려면 <span class="highlight">두 개의 form을 병기</span>
+                    <br/>
+<span style="font-size: 13.5px; display: block; margin-top: 4px;">예) 7번째 위치에서 "jaws" 또는 "claws" 모두 정답</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

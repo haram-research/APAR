@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>APAR 정답키 작성 가이드</title>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Noto Sans KR', sans-serif;
+        background: #f8f9fa;
+    }
+    
+    .slide-container {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    /* Background decorative elements */
+    .bg-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    .bg-circle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(66, 133, 244, 0.05);
+    }
+    
+    .bg-circle-1 {
+        width: 300px;
+        height: 300px;
+        top: -100px;
+        right: -50px;
+    }
+    
+    .bg-circle-2 {
+        width: 200px;
+        height: 200px;
+        bottom: -50px;
+        left: -50px;
+    }
+    
+    .bg-circle-3 {
+        width: 150px;
+        height: 150px;
+        top: 50%;
+        right: 10%;
+        background: rgba(52, 168, 83, 0.05);
+    }
+    
+    /* Header area */
+    .header-area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1280px;
+        height: 80px;
+        background: #ffffff;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 60px;
+        z-index: 10;
+    }
+    
+    .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: #4285F4;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+    }
+    
+    .logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+    
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .date-info {
+        font-size: 14px;
+        color: #5f6368;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .date-info i {
+        color: #4285F4;
+    }
+    
+    .version-badge {
+        background: #e8f0fe;
+        color: #4285F4;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    /* Main content area */
+    .main-content {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        width: 1280px;
+        height: 640px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 80px;
+        z-index: 5;
+    }
+    
+    .title-section {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+    
+    .main-title {
+        font-size: 64px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 24px;
+        letter-spacing: -0.5px;
+    }
+    
+    .main-title span {
+        color: #4285F4;
+    }
+    
+    .subtitle {
+        font-size: 24px;
+        color: #5f6368;
+        line-height: 1.6;
+    }
+    
+    /* Feature cards */
+    .feature-grid {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        width: 100%;
+        max-width: 1120px;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        width: 350px;
+        height: 290px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border: 1px solid #e8eaed;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        background: #e8f0fe;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        font-size: 26px;
+        color: #4285F4;
+        flex-shrink: 0;
+    }
+    
+    .feature-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    .feature-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 16px;
+    }
+    
+    .feature-desc {
+        font-size: 16px;
+        color: #5f6368;
+        line-height: 1.65;
+        flex: 1;
+    }
+    
+    .feature-footer {
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid #f1f3f4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #4285F4;
+        font-weight: 500;
+    }
+    
+    /* Text highlight */
+    .highlight {
+        background: linear-gradient(120deg, #e8f0fe 0%, #e8f0fe 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 35%;
+        background-position: 0 88%;
+        padding: 0 4px;
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #34A853;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background: #34A853;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+    
+    /* Bottom decoration */
+    .bottom-decoration {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 1280px;
+        height: 6px;
+        background: linear-gradient(90deg, #4285F4 0%, #34A853 100%);
+        z-index: 10;
+    }
+    
+    /* Additional visual elements */
+    .decorative-element {
+        position: absolute;
+        top: 120px;
+        right: 60px;
+        width: 140px;
+        height: 140px;
+        background: rgba(66, 133, 244, 0.06);
+        border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .decorative-element-2 {
+        position: absolute;
+        bottom: 120px;
+        left: 60px;
+        width: 100px;
+        height: 100px;
+        background: rgba(52, 168, 83, 0.06);
+        border-radius: 50%;
+        z-index: 1;
+    }
+</style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Background decorations -->
+<div class="bg-decoration">
+<div class="bg-circle bg-circle-1"></div>
+<div class="bg-circle bg-circle-2"></div>
+<div class="bg-circle bg-circle-3"></div>
+</div>
+<!-- Decorative elements -->
+<div class="decorative-element"></div>
+<div class="decorative-element-2"></div>
+<!-- Header -->
+<div class="header-area">
+<div class="logo-area">
+<div class="logo-icon">
+<i class="fas fa-key"></i>
+</div>
+<div class="logo-text">APAR</div>
+</div>
+<div class="header-right">
+<div class="date-info">
+<i class="fas fa-calendar-alt"></i>
+<span>2026-05-22</span>
+</div>
+<div class="version-badge">
+                v1.2.0
+            </div>
+</div>
+</div>
+<!-- Main content -->
+<div class="main-content">
+<div class="title-section" data-object-type="textbox" style="position: relative; width: 1000px; height: 160px;">
+<h1 class="main-title">
+<span>APAR</span> 정답키 작성 가이드
+            </h1>
+<p class="subtitle">
+                D열(정답키) 파싱 방식을 이해하고, <span class="highlight">채점이 의도대로 동작하도록</span> 작성하는 방법을 안내합니다
+            </p>
+</div>
+<div class="feature-grid">
+<div class="feature-card" data-object-type="textbox" style="position: relative;">
+<div class="feature-icon">
+<i class="fas fa-code"></i>
+</div>
+<div class="feature-content">
+<div class="feature-title">기본 형식</div>
+<div class="feature-desc">
+                        하나 이상의 [...] 블록으로 구성되며, 학생 답이 어느 하나와 일치하면 정답 처리됩니다
+                    </div>
+<div class="feature-footer">
+<i class="fas fa-arrow-right"></i>
+<span>자세히 보기</span>
+</div>
+</div>
+</div>
+<div class="feature-card" data-object-type="textbox" style="position: relative;">
+<div class="feature-icon">
+<i class="fas fa-list-check"></i>
+</div>
+<div class="feature-content">
+<div class="feature-title">문제 유형</div>
+<div class="feature-desc">
+                        Type A부터 Type E까지 5가지 문제 유형별 작성 방법을 제공합니다
+                    </div>
+<div class="feature-footer">
+<i class="fas fa-arrow-right"></i>
+<span>유형별 가이드</span>
+</div>
+</div>
+</div>
+<div class="feature-card" data-object-type="textbox" style="position: relative;">
+<div class="feature-icon">
+<i class="fas fa-check-double"></i>
+</div>
+<div class="feature-content">
+<div class="feature-title">자동 채점</div>
+<div class="feature-desc">
+                        APAR이 D열을 보고 문제 유형을 자동으로 감지하여 채점합니다
+                    </div>
+<div class="feature-footer">
+<div class="status-indicator">
+<div class="status-dot"></div>
+<span>준비 완료</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom decoration -->
+<div class="bottom-decoration"></div>
+</div>
+</body>
+</html>

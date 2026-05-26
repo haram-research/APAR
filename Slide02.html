@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>기본 형식 — [ ... ] 블록</title>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+        }
+        
+        .slide-container {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        
+        /* Header */
+        .header-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1280px;
+            height: 70px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 60px;
+            z-index: 10;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .page-title i {
+            color: #4285F4;
+        }
+        
+        .breadcrumb {
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
+        .breadcrumb span {
+            color: #4285F4;
+            font-weight: 500;
+        }
+        
+        /* Main content */
+        .main-content {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 1280px;
+            height: 650px;
+            display: flex;
+            padding: 40px 60px 20px 60px;
+            gap: 40px;
+        }
+        
+        /* Left panel - Explanation */
+        .left-panel {
+            width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .explanation-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid #4285F4;
+        }
+        
+        .explanation-text {
+            font-size: 16px;
+            color: #5f6368;
+            line-height: 1.6;
+        }
+        
+        .key-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .key-point-icon {
+            width: 24px;
+            height: 24px;
+            background: #e8f0fe;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 12px;
+            color: #4285F4;
+        }
+        
+        .key-point-text {
+            font-size: 15px;
+            color: #5f6368;
+            line-height: 1.5;
+        }
+        
+        /* Right panel - Code examples */
+        .right-panel {
+            width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .code-label {
+            font-size: 15px;
+            color: #d4d4d4;
+            font-weight: 500;
+        }
+        
+        .code-lang {
+            font-size: 12px;
+            color: #858585;
+            background: #2d2d2d;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .code-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 15px;
+            color: #d4d4d4;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        
+        .code-comment {
+            color: #6a9955;
+        }
+        
+        .code-string {
+            color: #ce9178;
+        }
+        
+        .code-keyword {
+            color: #569cd6;
+        }
+        
+        /* Example cards */
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .example-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .example-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .example-content {
+            font-size: 14px;
+            color: #5f6368;
+            font-family: 'Consolas', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        
+        /* Tips section */
+        .tips-section {
+            background: #e8f0fe;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .tips-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .tips-text {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.6;
+        }
+        
+        /* Status indicator */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #e8f5e9;
+            border-radius: 16px;
+            font-size: 13px;
+            color: #34A853;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #34A853;
+            border-radius: 50%;
+        }
+        
+        /* Highlight */
+        .highlight {
+            background: linear-gradient(120deg, #e8f0fe 0%, #e8f0fe 100%);
+            background-repeat: no-repeat;
+            background-size: 100% 40%;
+            background-position: 0 88%;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Header -->
+<div class="header-area">
+<div class="page-title">
+<i class="fas fa-cube"></i>
+<span>기본 형식 — [ ... ] 블록</span>
+</div>
+<div class="breadcrumb">
+<span>APAR 가이드</span> / 기본 형식
+            </div>
+</div>
+<!-- Main content -->
+<div class="main-content">
+<!-- Left panel -->
+<div class="left-panel">
+<div class="section-title">
+<i class="fas fa-info-circle" style="color: #4285F4; margin-right: 8px;"></i>
+                    D열 정답키 구조
+                </div>
+<div class="explanation-box">
+<div class="explanation-text">
+                        D열의 정답키는 <span class="highlight">하나 이상의 <code>[...]</code> 블록</span>으로 구성됩니다.
+                        각 블록은 <strong>서로 다른 허용 표현</strong>을 나타냅니다.
+                    </div>
+<div class="key-point">
+<div class="key-point-icon">
+<i class="fas fa-check"></i>
+</div>
+<div class="key-point-text">
+<strong>대소문자 구분 없음</strong><br/>
+                            학생 답이 블록 중 하나와 일치하면 정답 처리
+                        </div>
+</div>
+<div class="key-point">
+<div class="key-point-icon">
+<i class="fas fa-lightbulb"></i>
+</div>
+<div class="key-point-text">
+<strong>동의어·약어 추가</strong><br/>
+<code>[표현1][표현2]</code> 형식으로 이어서 작성
+                        </div>
+</div>
+</div>
+<div class="tips-section">
+<div class="tips-title">
+<i class="fas fa-exclamation-triangle"></i>
+                        작성 팁
+                    </div>
+<div class="tips-text">
+                        • 쉼표로 분해하면 리스트형(Type C)으로 해석될 수 있으니 주의<br/>
+                        • 5개 이상 항목은 자동으로 Type C로 분류됩니다
+                    </div>
+</div>
+</div>
+<!-- Right panel -->
+<div class="right-panel">
+<div class="code-block" style="flex-grow: 1;">
+<div class="code-header">
+<div class="code-label">정답키 작성 예시</div>
+<div class="code-lang">APAR</div>
+</div>
+<div class="code-content">
+<span class="code-comment">// 단일 정답</span>
+<span class="code-string">[genetically determined specialization]</span>
+<span class="code-comment">// 복수 정답 (OR 조건)</span>
+<span class="code-string">[genetically determined specialization][GDS]</span>
+<span class="code-comment">// 리스트 정답 (Type C)</span>
+<span class="code-string">[항목1, 항목2, 항목3, 항목4, 항목5]</span>
+</div>
+</div>
+<div class="example-grid">
+<div class="example-card">
+<div class="example-title">
+<i class="fas fa-check-circle" style="color: #34A853;"></i>
+                            올바른 예시
+                        </div>
+<div class="example-content">
+                            [genetically determined specialization]
+                        </div>
+</div>
+<div class="example-card">
+<div class="example-title">
+<i class="fas fa-times-circle" style="color: #ea4335;"></i>
+                            피해야 할 형식
+                        </div>
+<div class="example-content">
+                            [genetically, determined, specialization]
+                        </div>
+</div>
+</div>
+<div class="explanation-box">
+<div class="explanation-text">
+<strong>중요:</strong> 3–4단어짜리 고정 구(fixed phrase)는 <span class="highlight">쉼표 없이</span> 작성하세요.
+                        <br/>
+<code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 8px;">[genetically determined specialization]</code> ← 권장
+                    </div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
